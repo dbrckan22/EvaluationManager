@@ -1,0 +1,56 @@
+name: CD
+
+on:
+  push:
+    tags:
+      -"v*"
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup Nuget
+        uses: NuGet/setup-nuget@v2.0.0
+
+      - name: Restore packages
+        run: nuget restore EvaluationManagerTKIPP.sln
+
+      - name: Build solution
+        run: msbuild.exe EvaluationManagerTKIPP.sln /p:platform="Any CPU" /p:configuration="Release"
+
+      - name: Navigate to main project
+        run: cd PresentationLayer
+
+      - name: Create setup
+        run: msbuild.exe /t:Publish /p:configuration="Release" /p:PublishDir=publish/
+
+      - name: Create ZIP archive
+        uses: TheDoctor0/zip-release@0.7.6
+        with:
+          filename: 'EMSetup.zip'
+          path: PresentationLayer/publish/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: 'EMSetup.zip'
+          path: PresentationLayer/publish/
+
+      - name: Create release
+        uses: ncipollo/release-action@v1.14.0
+        with:
+          artefacts: 
+      
+      
+        
+
+      
+        
+      
